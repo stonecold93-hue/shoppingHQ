@@ -137,9 +137,8 @@ html[data-theme="light"] .ico-moon{display:flex;}
 .ep-head{display:flex;align-items:center;justify-content:space-between;gap:.5rem;}
 .ep-man{display:flex;gap:.5rem;}
 .ep-man input{flex:1;min-width:0;}
-.ep-cats{display:flex;gap:.35rem;overflow-x:auto;padding-bottom:.2rem;scrollbar-width:none;}
-.ep-cats::-webkit-scrollbar{display:none;}
-.ep-cat{padding:.35rem .8rem;border:1px solid var(--bl);border-radius:4px;background:transparent;color:var(--tx);font-family:"DM Sans",sans-serif;font-size:.75rem;white-space:nowrap;cursor:pointer;flex-shrink:0;}
+.ep-cats{display:flex;flex-wrap:wrap;gap:.35rem;}
+.ep-cat{padding:.35rem .8rem;border:1px solid var(--bl);border-radius:4px;background:transparent;color:var(--tx);font-family:"DM Sans",sans-serif;font-size:.75rem;white-space:nowrap;cursor:pointer;}
 .ep-cat.on{background:var(--act);}
 .ep-items{display:flex;flex-direction:column;gap:.35rem;overflow-y:auto;min-height:120px;max-height:50vh;}
 .ep-row{display:flex;align-items:center;gap:.5rem;border:1px solid var(--ln);border-radius:8px;padding:.3rem .5rem .3rem .75rem;flex-shrink:0;}
@@ -617,6 +616,7 @@ function renderPicker(){
   if(!ov||!ov.classList.contains("open"))return;
   const noms=Object.keys(EPIC_CATS);
   if(!epCat)epCat=noms[0];
+  document.getElementById("epic-man").placeholder="Autre item dans "+epCat+"...";
   const cb=document.getElementById("epic-cats");
   cb.innerHTML="";
   noms.forEach(k=>{
