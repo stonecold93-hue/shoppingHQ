@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ShoppingHQ</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2064%2064%22%3E%3Crect%20x=%221%22%20y=%221%22%20width=%2262%22%20height=%2262%22%20rx=%2214%22%20fill=%22%23000000%22%20stroke=%22%232389D4%22%20stroke-width=%222%22/%3E%3Cpath%20d=%22M6%2011H12L14.5%2020%22%20fill=%22none%22%20stroke=%22%23F4A623%22%20stroke-width=%223.5%22%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22/%3E%3Cpath%20d=%22M14%2020H57L51%2044H22Z%22%20fill=%22%23F4A623%22%20stroke=%22%23F4A623%22%20stroke-width=%223.5%22%20stroke-linejoin=%22round%22/%3E%3Cpath%20d=%22M23%2044L25%2049H47%22%20fill=%22none%22%20stroke=%22%23F4A623%22%20stroke-width=%223.5%22%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22/%3E%3Ccircle%20cx=%2228%22%20cy=%2255%22%20r=%223.5%22%20fill=%22%23F4A623%22/%3E%3Ccircle%20cx=%2245%22%20cy=%2255%22%20r=%223.5%22%20fill=%22%23F4A623%22/%3E%3Cg%20transform=%22translate(-3%200)%20rotate(-2%2037%2032)%22%20fill=%22none%22%20stroke=%22%23000000%22%20stroke-width=%222.8%22%20stroke-linecap=%22round%22%20stroke-linejoin=%22round%22%3E%3Cpath%20d=%22M28%2025L27%2038M36%2025L35.5%2038M27.5%2032L35.8%2031.5%22/%3E%3Cpath%20d=%22M46%2024.5C41%2024.5%2040%2030%2040.5%2034C41%2038.5%2044%2039.5%2046.5%2039.5C50.5%2039.5%2052%2036%2051.5%2031.5C51%2027%2049%2024.5%2046%2024.5Z%22/%3E%3Cpath%20d=%22M47%2035L52%2041%22/%3E%3C/g%3E%3C/svg%3E">
 <script>
 try{
   var t=localStorage.getItem("shq_theme");
@@ -62,6 +63,24 @@ html[data-theme="light"] .ico-moon{display:flex;}
 .content{max-width:720px;margin:0 auto;padding:1.25rem;}
 .wel{font-family:"Just Another Hand",cursive;font-size:32px;line-height:1.1;transform:rotate(-2deg);transform-origin:left center;margin-bottom:.8rem;}
 .info{font-size:.8rem;color:var(--mu);line-height:1.6;}
+
+/* ONGLETS */
+.tabs{display:flex;gap:.35rem;padding:.6rem 1.1rem;overflow-x:auto;border-bottom:1px solid var(--ln);scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{padding:.35rem .8rem;border:1px solid var(--bl);border-radius:4px;background:transparent;color:var(--tx);font-family:"DM Sans",sans-serif;font-size:.75rem;white-space:nowrap;cursor:pointer;}
+.tab.active{background:var(--act);}
+.section{display:none;}
+.section.active{display:block;}
+
+/* ACCUEIL */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.tile{border:1px solid var(--bl);border-radius:8px;padding:1rem;cursor:pointer;}
+.tile:hover{background:var(--act);}
+.tile-name{font-family:"Just Another Hand",cursive;font-size:28px;line-height:1.1;transform:rotate(-2deg);transform-origin:left center;}
+.tile-sub{font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--mu);margin-top:3px;}
+
+/* PAGES */
+.ttl{font-family:"Just Another Hand",cursive;font-size:34px;line-height:1;margin-bottom:.9rem;padding-bottom:.5rem;border-bottom:1px solid var(--ln);transform:rotate(-2deg);transform-origin:left center;}
 </style>
 </head>
 <body>
@@ -94,10 +113,8 @@ html[data-theme="light"] .ico-moon{display:flex;}
       <button class="icon-btn" type="button" onclick="logout()" title="Quitter">&#10005;</button>
     </div>
   </div>
-  <div class="content">
-    <div class="wel" id="wel">Bonjour</div>
-    <div class="info">Connexion reussie. Les onglets arrivent au prochain segment.</div>
-  </div>
+  <div class="tabs" id="tabs-bar"></div>
+  <div class="content" id="app-content"></div>
 </div>
 
 <script>
@@ -109,6 +126,63 @@ function toggleTheme(){
   document.documentElement.setAttribute("data-theme",nxt);
   try{localStorage.setItem("shq_theme",nxt);}catch(e){}
 }
+
+var ONGLETS=["Dollo","Walmart","Costco","Quincaillerie","Pharmacie","Vetements","Maquillage","Epicerie","Autres","A prevoir"];
+
+function goTab(name){
+  var tabs=document.querySelectorAll(".tab");
+  for(var i=0;i<tabs.length;i++){
+    var on=tabs[i].getAttribute("data-tab")===name;
+    tabs[i].classList.toggle("active",on);
+    if(on&&tabs[i].scrollIntoView){tabs[i].scrollIntoView({inline:"center",block:"nearest"});}
+  }
+  var secs=document.querySelectorAll(".section");
+  for(var j=0;j<secs.length;j++){
+    secs[j].classList.toggle("active",secs[j].getAttribute("data-sec")===name);
+  }
+}
+
+function buildUI(){
+  var bar=document.getElementById("tabs-bar");
+  var cont=document.getElementById("app-content");
+  var tous=["Accueil"].concat(ONGLETS);
+  tous.forEach(function(nom){
+    var b=document.createElement("button");
+    b.type="button";b.className="tab";b.setAttribute("data-tab",nom);b.textContent=nom;
+    b.onclick=function(){goTab(nom);};
+    bar.appendChild(b);
+    var sec=document.createElement("div");
+    sec.className="section";sec.setAttribute("data-sec",nom);
+    if(nom==="Accueil"){
+      var w=document.createElement("div");
+      w.className="wel";w.id="wel";w.textContent="Bonjour";
+      sec.appendChild(w);
+      var g=document.createElement("div");
+      g.className="grid";
+      ONGLETS.forEach(function(n){
+        var t=document.createElement("div");
+        t.className="tile";
+        var tn=document.createElement("div");
+        tn.className="tile-name";tn.textContent=n;
+        var ts=document.createElement("div");
+        ts.className="tile-sub";ts.textContent="Prive";
+        t.appendChild(tn);t.appendChild(ts);
+        t.onclick=function(){goTab(n);};
+        g.appendChild(t);
+      });
+      sec.appendChild(g);
+    }else{
+      var ti=document.createElement("div");
+      ti.className="ttl";ti.textContent=nom;
+      var inf=document.createElement("div");
+      inf.className="info";inf.textContent="Cette page est vide pour l instant.";
+      sec.appendChild(ti);sec.appendChild(inf);
+    }
+    cont.appendChild(sec);
+  });
+  goTab("Accueil");
+}
+buildUI();
 </script>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
