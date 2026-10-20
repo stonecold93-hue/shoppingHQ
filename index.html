@@ -124,6 +124,9 @@ html[data-theme="light"] .ico-moon{display:flex;}
 .px.v{color:var(--mu);}
 .px-edit{width:64px;background:transparent;color:var(--tx);border:none;outline:none;font-family:"DM Sans",sans-serif;font-size:16px;text-align:center;}
 .rw.mg .nm{flex:1;min-width:0;}
+.mag-in{width:130px;min-width:0;}
+.search.sm-mag{flex:0 0 96px;}
+.search.sm-px{flex:0 0 64px;}
 @media(max-width:480px){
   .rw.mg{flex-wrap:wrap;}
   .rw.mg .xx{order:2;}
@@ -199,6 +202,7 @@ function toggleTheme(){
 var ONGLETS=["Dollo","Walmart","Costco","Quincaillerie","Pharmacie","Vetements","Maquillage","Epicerie","Autres","A prevoir"];
 var LISTES={"Dollo":"dollo","Walmart":"walmart","Costco":"costco"};
 var MGL={"Quincaillerie":"quincaillerie","Pharmacie":"pharmacie","Vetements":"vetements","Maquillage":"maquillage","Epicerie":"epicerie"};
+var LIBRES={"Autres":"autres","A prevoir":"aprevoir"};
 var MAGS={
   quincaillerie:["Rona","Home Depot","Canac","BMR","Home Hardware","Autre"],
   pharmacie:["PJC Jean Coutu","Acces pharma (Walmart)","Familiprix Extra","Familiprix","Pharmaprix","Brunet","Brunet Plus","Uniprix","Proxim","Independante (Costco)","Pharmachoix","Pharmasave","Rexall","Clini plus","Pharmacie Independante"],
@@ -207,7 +211,7 @@ var MAGS={
   epicerie:["IGA","IGA Extra","Metro","Metro Plus","Super C","Maxi","Provigo","Provigo Le Marche","Loblaws","Marche Tradition","Marche Bonichoix","Marche Richelieu","Marche Ami","Intermarche","Adonis","Mayrand","Rachelle-Bery","Avril","Walmart","Costco","Giant Tiger","Dollarama"]
 };
 
-function buildMgl(sec,nom,id){
+function buildMgl(sec,nom,id,libre){
   var ti=document.createElement("div");
   ti.className="ttl";ti.textContent=nom;
   var bar=document.createElement("div");
@@ -217,12 +221,30 @@ function buildMgl(sec,nom,id){
   inp.placeholder="Ajouter un item...";inp.autocomplete="off";
   var ad=document.createElement("button");
   ad.type="button";ad.className="add";ad.id="mgl-"+id+"-add";ad.textContent="+ Ajouter";
-  bar.appendChild(inp);bar.appendChild(ad);
+  var bar2=null;
+  bar.appendChild(inp);
+  if(libre){
+    var mg=document.createElement("input");
+    mg.type="text";mg.className="search sm-mag";mg.id="mgl-"+id+"-mag";
+    mg.placeholder="Magasin";mg.autocomplete="off";
+    var pr=document.createElement("input");
+    pr.type="text";pr.className="search sm-px";pr.id="mgl-"+id+"-prix";
+    pr.placeholder="Prix";pr.autocomplete="off";pr.inputMode="decimal";
+    bar.appendChild(mg);bar.appendChild(pr);
+    bar2=document.createElement("div");
+    bar2.className="bar";
+    ad.style.marginLeft="auto";
+    bar2.appendChild(ad);
+  }else{
+    bar.appendChild(ad);
+  }
   var cl=document.createElement("button");
   cl.type="button";cl.className="clr";cl.id="mgl-"+id+"-clear";cl.textContent="Effacer les coches";
   var ul=document.createElement("div");
   ul.className="list";ul.id="mgl-"+id+"-ul";
-  sec.appendChild(ti);sec.appendChild(bar);sec.appendChild(cl);sec.appendChild(ul);
+  sec.appendChild(ti);sec.appendChild(bar);
+  if(bar2)sec.appendChild(bar2);
+  sec.appendChild(cl);sec.appendChild(ul);
 }
 
 function buildListe(sec,nom,id){
@@ -290,7 +312,9 @@ function buildUI(){
     }else if(LISTES[nom]){
       buildListe(sec,nom,LISTES[nom]);
     }else if(MGL[nom]){
-      buildMgl(sec,nom,MGL[nom]);
+      buildMgl(sec,nom,MGL[nom],false);
+    }else if(LIBRES[nom]){
+      buildMgl(sec,nom,LIBRES[nom],true);
     }else{
       var ti=document.createElement("div");
       ti.className="ttl";ti.textContent=nom;
@@ -339,6 +363,7 @@ window._logout=()=>signOut(auth);
 /* LISTES SIMPLES : users/{uid}/{dollo|walmart|costco} */
 const LISTES=window.LISTES;
 const MGL=window.MGL;
+const LIBRES=window.LIBRES;
 const MAGS=window.MAGS;
 const listeData={};
 let listeUnsubs={};
@@ -408,6 +433,7 @@ function stopListeners(){
   currentUid=null;
   Object.values(LISTES).forEach(id=>{listeData[id]=[];renderListe(id);});
   Object.values(MGL).forEach(id=>{listeData[id]=[];renderMgl(id);});
+  Object.values(LIBRES).forEach(id=>{listeData[id]=[];renderMgl(id);});
 }
 
 function ecouter(id,rendu){
@@ -423,6 +449,7 @@ function startListeners(uid){
   currentUid=uid;
   Object.values(LISTES).forEach(id=>ecouter(id,renderListe));
   Object.values(MGL).forEach(id=>ecouter(id,renderMgl));
+  Object.values(LIBRES).forEach(id=>ecouter(id,renderMgl));
 }
 
 /* LISTES AVEC MAGASIN ET PRIX : users/{uid}/{quincaillerie|pharmacie|vetements|maquillage|epicerie} */
@@ -430,7 +457,7 @@ function renderMgl(id){
   const ul=document.getElementById("mgl-"+id+"-ul");
   if(!ul)return;
   const act=document.activeElement;
-  if(act&&ul.contains(act)&&act.classList.contains("px-edit"))return;
+  if(act&&ul.contains(act)&&(act.classList.contains("px-edit")||act.classList.contains("mag-in")))return;
   const items=listeData[id]||[];
   ul.innerHTML="";
   if(!items.length){
@@ -440,7 +467,7 @@ function renderMgl(id){
     ul.appendChild(e);
     return;
   }
-  const mags=MAGS[id];
+  const mags=MAGS[id]||null;
   items.forEach(item=>{
     const row=document.createElement("div");
     row.className="rw mg"+(item.achete?" dn":"");
@@ -455,7 +482,18 @@ function renderMgl(id){
     nm.className="nm";nm.textContent=item.nom||"";
     const meta=document.createElement("div");
     meta.className="mgmeta";
-    const sel=document.createElement("select");
+    let sel;
+    if(!mags){
+      sel=document.createElement("input");
+      sel.type="text";sel.className="mag mag-in";sel.placeholder="magasin";
+      sel.autocomplete="off";sel.value=item.magasin||"";
+      sel.addEventListener("click",e=>e.stopPropagation());
+      sel.addEventListener("change",()=>{
+        updateDoc(docRef(id,item.id),{magasin:sel.value.trim()}).catch(err=>toast("Erreur: "+err.message));
+      });
+      sel.addEventListener("keydown",e=>{e.stopPropagation();if(e.key==="Enter")sel.blur();});
+    }else{
+    sel=document.createElement("select");
     sel.className="mag";
     const liste=mags.slice();
     if(item.magasin&&liste.indexOf(item.magasin)<0)liste.push(item.magasin);
@@ -469,6 +507,7 @@ function renderMgl(id){
     sel.addEventListener("change",()=>{
       updateDoc(docRef(id,item.id),{magasin:sel.value}).catch(err=>toast("Erreur: "+err.message));
     });
+    }
     const px=document.createElement("div");
     px.className="px"+(item.prix?"":" v");
     px.textContent=item.prix||"prix";
@@ -512,8 +551,15 @@ async function ajouterMgl(id){
   const nom=inp.value.trim();
   if(!nom){toast("Entre un nom");return;}
   try{
-    await addDoc(colRef(id),{nom,magasin:MAGS[id][0],prix:"",achete:false,createdAt:serverTimestamp()});
+    const libre=!MAGS[id];
+    const magEl=document.getElementById("mgl-"+id+"-mag");
+    const prixEl=document.getElementById("mgl-"+id+"-prix");
+    const magasin=libre?(magEl?magEl.value.trim():""):MAGS[id][0];
+    const prix=libre?(prixEl?prixEl.value.trim():""):"";
+    await addDoc(colRef(id),{nom,magasin,prix,achete:false,createdAt:serverTimestamp()});
     inp.value="";
+    if(magEl)magEl.value="";
+    if(prixEl)prixEl.value="";
     inp.focus();
   }catch(e){toast("Erreur: "+e.message);}
 }
@@ -559,10 +605,13 @@ Object.values(LISTES).forEach(id=>{
   document.getElementById("liste-"+id+"-add").addEventListener("click",()=>ouvrirModalListe(id,null));
   document.getElementById("liste-"+id+"-clear").addEventListener("click",()=>effacerCoches(id));
 });
-Object.values(MGL).forEach(id=>{
+Object.values(MGL).concat(Object.values(LIBRES)).forEach(id=>{
   document.getElementById("mgl-"+id+"-add").addEventListener("click",()=>ajouterMgl(id));
-  document.getElementById("mgl-"+id+"-input").addEventListener("keydown",e=>{
-    if(e.key==="Enter")ajouterMgl(id);
+  ["input","mag","prix"].forEach(suf=>{
+    const el=document.getElementById("mgl-"+id+"-"+suf);
+    if(el)el.addEventListener("keydown",e=>{
+      if(e.key==="Enter")ajouterMgl(id);
+    });
   });
   document.getElementById("mgl-"+id+"-clear").addEventListener("click",()=>effacerCoches(id));
 });
