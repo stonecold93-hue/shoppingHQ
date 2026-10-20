@@ -135,8 +135,9 @@ html[data-theme="light"] .ico-moon{display:flex;}
 }
 .ep-modal{max-height:92vh;overflow:hidden;}
 .ep-head{display:flex;align-items:center;justify-content:space-between;gap:.5rem;}
-.ep-man{display:flex;gap:.5rem;}
-.ep-man input{flex:1;min-width:0;}
+.modal select{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--ln);border-radius:6px;padding:.55rem .8rem;font-family:"DM Sans",sans-serif;font-size:16px;outline:none;}
+.modal select:focus{border-color:var(--bl);}
+.modal select option{background:var(--bg);color:var(--tx);}
 .ep-cats{display:flex;flex-wrap:wrap;gap:.35rem;}
 .ep-cat{padding:.35rem .8rem;border:1px solid var(--bl);border-radius:4px;background:transparent;color:var(--tx);font-family:"DM Sans",sans-serif;font-size:.75rem;white-space:nowrap;cursor:pointer;}
 .ep-cat.on{background:var(--act);}
@@ -210,12 +211,28 @@ html[data-theme="light"] .ico-moon{display:flex;}
       <div class="modal-title">Ajouter</div>
       <button class="btn" type="button" id="epic-close">Fermer</button>
     </div>
-    <div class="ep-man">
-      <input type="text" id="epic-man" placeholder="Autre item..." autocomplete="off">
-      <button class="btn" type="button" id="epic-man-add" aria-label="Ajouter" style="width:42px;font-size:1.3rem;padding:0;">+</button>
-    </div>
+    <div style="display:flex;justify-content:flex-end;"><button class="btn" type="button" id="epic-new">+ Ajout aliment</button></div>
     <div class="ep-cats" id="epic-cats"></div>
     <div class="ep-items" id="epic-items"></div>
+  </div>
+</div>
+
+<!-- FENETRE NOUVEL ALIMENT -->
+<div class="modal-overlay" id="modal-alim">
+  <div class="modal">
+    <div class="modal-title">Nouvel aliment</div>
+    <div>
+      <div class="modal-label">Nom</div>
+      <input type="text" id="alim-nom" placeholder="Ex: Tofu" autocomplete="off">
+    </div>
+    <div>
+      <div class="modal-label">Categorie</div>
+      <select id="alim-cat"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" type="button" id="alim-annuler">Annuler</button>
+      <button class="btn primary" type="button" id="alim-ok">Enregistrer</button>
+    </div>
   </div>
 </div>
 
@@ -616,7 +633,6 @@ function renderPicker(){
   if(!ov||!ov.classList.contains("open"))return;
   const noms=Object.keys(EPIC_CATS);
   if(!epCat)epCat=noms[0];
-  document.getElementById("epic-man").placeholder="Autre item dans "+epCat+"...";
   const cb=document.getElementById("epic-cats");
   cb.innerHTML="";
   noms.forEach(k=>{
@@ -654,17 +670,33 @@ async function ajouterEpic(nom){
     else await addDoc(colRef("epicerie"),{nom:n,magasin:MAGS.epicerie[0],prix:"",achete:false,createdAt:serverTimestamp()});
   }catch(e){toast("Erreur: "+e.message);}
 }
-async function ajouterEpicMan(){
-  const inp=document.getElementById("epic-man");
-  const n=inp.value.trim();
-  if(!n){toast("Entre un nom");return;}
+function ouvrirAlim(){
+  const sel=document.getElementById("alim-cat");
+  sel.innerHTML="";
+  Object.keys(EPIC_CATS).forEach(k=>{
+    const o=document.createElement("option");
+    o.value=k;o.textContent=k;sel.appendChild(o);
+  });
+  sel.value=epCat||Object.keys(EPIC_CATS)[0];
+  document.getElementById("alim-nom").value="";
+  document.getElementById("modal-alim").classList.add("open");
+  setTimeout(()=>document.getElementById("alim-nom").focus(),150);
+}
+function fermerAlim(){document.getElementById("modal-alim").classList.remove("open");}
+async function enregistrerAlim(){
   if(!currentUid)return;
+  const n=document.getElementById("alim-nom").value.trim();
+  const cat=document.getElementById("alim-cat").value;
+  if(!n){toast("Entre un nom");return;}
+  if(epItems(cat).some(x=>x.toLowerCase()===n.toLowerCase())){toast("Deja dans "+cat);return;}
   try{
-    const connu=epItems(epCat).some(x=>x.toLowerCase()===n.toLowerCase());
-    if(!connu)await addDoc(colRef("epicerie_perso"),{cat:epCat,nom:n,createdAt:serverTimestamp()});
-    await ajouterEpic(n);
-    inp.value="";
-    inp.focus();
+    await addDoc(colRef("epicerie_perso"),{cat,nom:n,createdAt:serverTimestamp()});
+    fermerAlim();
+    epCat=cat;
+    renderPicker();
+    const lb=document.getElementById("epic-items");
+    lb.scrollTop=lb.scrollHeight;
+    toast("Enregistre dans "+cat);
   }catch(e){toast("Erreur: "+e.message);}
 }
 function ouvrirPicker(){
@@ -725,8 +757,11 @@ Object.values(MGL).concat(Object.values(LIBRES)).forEach(id=>{
   document.getElementById("mgl-"+id+"-clear").addEventListener("click",()=>effacerCoches(id));
 });
 document.getElementById("epic-close").addEventListener("click",fermerPicker);
-document.getElementById("epic-man-add").addEventListener("click",ajouterEpicMan);
-document.getElementById("epic-man").addEventListener("keydown",e=>{if(e.key==="Enter")ajouterEpicMan();});
+document.getElementById("epic-new").addEventListener("click",ouvrirAlim);
+document.getElementById("alim-annuler").addEventListener("click",fermerAlim);
+document.getElementById("alim-ok").addEventListener("click",enregistrerAlim);
+document.getElementById("alim-nom").addEventListener("keydown",e=>{if(e.key==="Enter")enregistrerAlim();});
+document.getElementById("modal-alim").addEventListener("click",e=>{if(e.target.id==="modal-alim")fermerAlim();});
 document.getElementById("modal-epic").addEventListener("click",e=>{if(e.target.id==="modal-epic")fermerPicker();});
 document.getElementById("liste-del-btn").addEventListener("click",async()=>{
   if(!currentUid||!modalListe||!modalEditId)return;
