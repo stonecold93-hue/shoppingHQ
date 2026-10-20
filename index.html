@@ -115,6 +115,21 @@ html[data-theme="light"] .ico-moon{display:flex;}
 .btn.primary{background:var(--tx);color:var(--bg);border-color:var(--tx);}
 .btn.danger{border-color:#F06060;color:#F06060;padding:.5rem .7rem;}
 .btn svg{width:16px;height:16px;}
+
+/* LISTES AVEC MAGASIN ET PRIX */
+.mgmeta{display:flex;align-items:center;gap:.4rem;flex-shrink:0;}
+.mag{background:transparent;color:var(--tx);border:1px solid var(--bl);border-radius:4px;padding:3px 6px;font-family:"DM Sans",sans-serif;font-size:16px;max-width:150px;outline:none;cursor:pointer;}
+.mag option{background:var(--bg);color:var(--tx);}
+.px{border:1px solid var(--ln);border-radius:4px;padding:3px 8px;font-size:.8rem;min-width:52px;text-align:center;cursor:pointer;white-space:nowrap;}
+.px.v{color:var(--mu);}
+.px-edit{width:64px;background:transparent;color:var(--tx);border:none;outline:none;font-family:"DM Sans",sans-serif;font-size:16px;text-align:center;}
+.rw.mg .nm{flex:1;min-width:0;}
+@media(max-width:480px){
+  .rw.mg{flex-wrap:wrap;}
+  .rw.mg .xx{order:2;}
+  .rw.mg .mgmeta{order:3;flex-basis:100%;padding-left:42px;}
+  .rw.mg .mag{flex:1;max-width:none;min-width:0;}
+}
 </style>
 </head>
 <body>
@@ -183,6 +198,32 @@ function toggleTheme(){
 
 var ONGLETS=["Dollo","Walmart","Costco","Quincaillerie","Pharmacie","Vetements","Maquillage","Epicerie","Autres","A prevoir"];
 var LISTES={"Dollo":"dollo","Walmart":"walmart","Costco":"costco"};
+var MGL={"Quincaillerie":"quincaillerie","Pharmacie":"pharmacie","Vetements":"vetements","Maquillage":"maquillage","Epicerie":"epicerie"};
+var MAGS={
+  quincaillerie:["Rona","Home Depot","Canac","BMR","Home Hardware","Autre"],
+  pharmacie:["PJC Jean Coutu","Acces pharma (Walmart)","Familiprix Extra","Familiprix","Pharmaprix","Brunet","Brunet Plus","Uniprix","Proxim","Independante (Costco)","Pharmachoix","Pharmasave","Rexall","Clini plus","Pharmacie Independante"],
+  vetements:["Simons","Zara","H&M","Uniqlo","Old Navy","Gap","American Eagle","Garage","Dynamite","Jacob","Ardene","Aritzia","Urban Outfitters","Marie Claire","Winners","Marshalls","Walmart","Costco","Giant Tiger","Sports Experts","Sport Chek","Atmosphere","Lululemon","Decathlon","MEC","Marks","Moores","Bikini Village","Carters / OshKosh","The Childrens Place","Aldo","Pegabo","Browns Shoes"],
+  maquillage:["Sephora","MAC Cosmetics","Kiko Milano","NYX Professional Makeup","Benefit Cosmetics","Rickys","Sally Beauty","Yves Rocher","Holt Renfrew","Simons","Pharmaprix","Jean Coutu","Familiprix","Uniprix","Brunet","Proxim","Pharmachoix","Rexall","Walmart","Costco","Giant Tiger","Dollarama","Winners","Marshalls","Ardene","Dynamite"],
+  epicerie:["IGA","IGA Extra","Metro","Metro Plus","Super C","Maxi","Provigo","Provigo Le Marche","Loblaws","Marche Tradition","Marche Bonichoix","Marche Richelieu","Marche Ami","Intermarche","Adonis","Mayrand","Rachelle-Bery","Avril","Walmart","Costco","Giant Tiger","Dollarama"]
+};
+
+function buildMgl(sec,nom,id){
+  var ti=document.createElement("div");
+  ti.className="ttl";ti.textContent=nom;
+  var bar=document.createElement("div");
+  bar.className="bar";
+  var inp=document.createElement("input");
+  inp.type="text";inp.className="search";inp.id="mgl-"+id+"-input";
+  inp.placeholder="Ajouter un item...";inp.autocomplete="off";
+  var ad=document.createElement("button");
+  ad.type="button";ad.className="add";ad.id="mgl-"+id+"-add";ad.textContent="+ Ajouter";
+  bar.appendChild(inp);bar.appendChild(ad);
+  var cl=document.createElement("button");
+  cl.type="button";cl.className="clr";cl.id="mgl-"+id+"-clear";cl.textContent="Effacer les coches";
+  var ul=document.createElement("div");
+  ul.className="list";ul.id="mgl-"+id+"-ul";
+  sec.appendChild(ti);sec.appendChild(bar);sec.appendChild(cl);sec.appendChild(ul);
+}
 
 function buildListe(sec,nom,id){
   var ti=document.createElement("div");
@@ -248,6 +289,8 @@ function buildUI(){
       sec.appendChild(g);
     }else if(LISTES[nom]){
       buildListe(sec,nom,LISTES[nom]);
+    }else if(MGL[nom]){
+      buildMgl(sec,nom,MGL[nom]);
     }else{
       var ti=document.createElement("div");
       ti.className="ttl";ti.textContent=nom;
@@ -295,6 +338,8 @@ window._logout=()=>signOut(auth);
 
 /* LISTES SIMPLES : users/{uid}/{dollo|walmart|costco} */
 const LISTES=window.LISTES;
+const MGL=window.MGL;
+const MAGS=window.MAGS;
 const listeData={};
 let listeUnsubs={};
 let currentUid=null;
@@ -349,6 +394,7 @@ function renderListe(id){
     x.type="button";x.className="xx";x.textContent="✕";x.title="Supprimer";
     x.addEventListener("click",e=>{
       e.stopPropagation();
+      if(!confirm("Supprimer ?"))return;
       deleteDoc(docRef(id,item.id)).catch(err=>toast("Erreur: "+err.message));
     });
     row.appendChild(chk);row.appendChild(body);row.appendChild(x);
@@ -361,18 +407,115 @@ function stopListeners(){
   listeUnsubs={};
   currentUid=null;
   Object.values(LISTES).forEach(id=>{listeData[id]=[];renderListe(id);});
+  Object.values(MGL).forEach(id=>{listeData[id]=[];renderMgl(id);});
+}
+
+function ecouter(id,rendu){
+  const q=query(colRef(id),orderBy("createdAt","desc"));
+  listeUnsubs[id]=onSnapshot(q,snap=>{
+    listeData[id]=snap.docs.map(d=>({id:d.id,...d.data()}));
+    rendu(id);
+  },err=>toast("Erreur: "+err.message));
 }
 
 function startListeners(uid){
   stopListeners();
   currentUid=uid;
-  Object.values(LISTES).forEach(id=>{
-    const q=query(colRef(id),orderBy("createdAt","desc"));
-    listeUnsubs[id]=onSnapshot(q,snap=>{
-      listeData[id]=snap.docs.map(d=>({id:d.id,...d.data()}));
-      renderListe(id);
-    },err=>toast("Erreur: "+err.message));
+  Object.values(LISTES).forEach(id=>ecouter(id,renderListe));
+  Object.values(MGL).forEach(id=>ecouter(id,renderMgl));
+}
+
+/* LISTES AVEC MAGASIN ET PRIX : users/{uid}/{quincaillerie|pharmacie|vetements|maquillage|epicerie} */
+function renderMgl(id){
+  const ul=document.getElementById("mgl-"+id+"-ul");
+  if(!ul)return;
+  const act=document.activeElement;
+  if(act&&ul.contains(act)&&act.classList.contains("px-edit"))return;
+  const items=listeData[id]||[];
+  ul.innerHTML="";
+  if(!items.length){
+    const e=document.createElement("div");
+    e.className="empty";
+    e.textContent="Aucun item pour l instant";
+    ul.appendChild(e);
+    return;
+  }
+  const mags=MAGS[id];
+  items.forEach(item=>{
+    const row=document.createElement("div");
+    row.className="rw mg"+(item.achete?" dn":"");
+    const chk=document.createElement("button");
+    chk.type="button";chk.className="ck";
+    chk.textContent=item.achete?"✓":"";
+    chk.addEventListener("click",e=>{
+      e.stopPropagation();
+      updateDoc(docRef(id,item.id),{achete:!item.achete}).catch(err=>toast("Erreur: "+err.message));
+    });
+    const nm=document.createElement("div");
+    nm.className="nm";nm.textContent=item.nom||"";
+    const meta=document.createElement("div");
+    meta.className="mgmeta";
+    const sel=document.createElement("select");
+    sel.className="mag";
+    const liste=mags.slice();
+    if(item.magasin&&liste.indexOf(item.magasin)<0)liste.push(item.magasin);
+    liste.forEach(m=>{
+      const o=document.createElement("option");
+      o.value=m;o.textContent=m;
+      sel.appendChild(o);
+    });
+    sel.value=item.magasin||mags[0];
+    sel.addEventListener("click",e=>e.stopPropagation());
+    sel.addEventListener("change",()=>{
+      updateDoc(docRef(id,item.id),{magasin:sel.value}).catch(err=>toast("Erreur: "+err.message));
+    });
+    const px=document.createElement("div");
+    px.className="px"+(item.prix?"":" v");
+    px.textContent=item.prix||"prix";
+    px.addEventListener("click",e=>{
+      e.stopPropagation();
+      if(px.querySelector("input"))return;
+      const cur=item.prix||"";
+      const inp=document.createElement("input");
+      inp.type="text";inp.className="px-edit";inp.value=cur;
+      inp.placeholder="prix";inp.autocomplete="off";inp.inputMode="decimal";
+      px.textContent="";
+      px.classList.remove("v");
+      px.appendChild(inp);
+      inp.focus();inp.select();
+      let fini=false;
+      inp.addEventListener("blur",()=>{
+        if(fini)return;
+        fini=true;
+        const val=inp.value.trim();
+        if(val===cur){renderMgl(id);return;}
+        updateDoc(docRef(id,item.id),{prix:val}).catch(err=>toast("Erreur: "+err.message));
+      });
+      inp.addEventListener("keydown",e2=>{if(e2.key==="Enter")inp.blur();});
+    });
+    meta.appendChild(sel);meta.appendChild(px);
+    const x=document.createElement("button");
+    x.type="button";x.className="xx";x.textContent="✕";x.title="Supprimer";
+    x.addEventListener("click",e=>{
+      e.stopPropagation();
+      if(!confirm("Supprimer ?"))return;
+      deleteDoc(docRef(id,item.id)).catch(err=>toast("Erreur: "+err.message));
+    });
+    row.appendChild(chk);row.appendChild(nm);row.appendChild(meta);row.appendChild(x);
+    ul.appendChild(row);
   });
+}
+
+async function ajouterMgl(id){
+  if(!currentUid)return;
+  const inp=document.getElementById("mgl-"+id+"-input");
+  const nom=inp.value.trim();
+  if(!nom){toast("Entre un nom");return;}
+  try{
+    await addDoc(colRef(id),{nom,magasin:MAGS[id][0],prix:"",achete:false,createdAt:serverTimestamp()});
+    inp.value="";
+    inp.focus();
+  }catch(e){toast("Erreur: "+e.message);}
 }
 
 function ouvrirModalListe(id,item){
@@ -415,6 +558,13 @@ Object.values(LISTES).forEach(id=>{
   document.getElementById("liste-"+id+"-search").addEventListener("input",()=>renderListe(id));
   document.getElementById("liste-"+id+"-add").addEventListener("click",()=>ouvrirModalListe(id,null));
   document.getElementById("liste-"+id+"-clear").addEventListener("click",()=>effacerCoches(id));
+});
+Object.values(MGL).forEach(id=>{
+  document.getElementById("mgl-"+id+"-add").addEventListener("click",()=>ajouterMgl(id));
+  document.getElementById("mgl-"+id+"-input").addEventListener("keydown",e=>{
+    if(e.key==="Enter")ajouterMgl(id);
+  });
+  document.getElementById("mgl-"+id+"-clear").addEventListener("click",()=>effacerCoches(id));
 });
 document.getElementById("liste-del-btn").addEventListener("click",async()=>{
   if(!currentUid||!modalListe||!modalEditId)return;
