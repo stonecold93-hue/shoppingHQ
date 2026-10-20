@@ -81,6 +81,40 @@ html[data-theme="light"] .ico-moon{display:flex;}
 
 /* PAGES */
 .ttl{font-family:"Just Another Hand",cursive;font-size:34px;line-height:1;margin-bottom:.9rem;padding-bottom:.5rem;border-bottom:1px solid var(--ln);transform:rotate(-2deg);transform-origin:left center;}
+
+/* LISTES */
+.bar{display:flex;gap:.5rem;margin-bottom:.6rem;}
+.search{flex:1;min-width:0;background:transparent;color:var(--tx);border:1px solid var(--ln);border-radius:6px;padding:.5rem .85rem;font-family:"DM Sans",sans-serif;font-size:16px;outline:none;}
+.search:focus{border-color:var(--bl);}
+.add{border:1px solid var(--tx);background:var(--tx);color:var(--bg);border-radius:6px;padding:.5rem 1.1rem;font-family:"DM Sans",sans-serif;font-size:.8rem;white-space:nowrap;cursor:pointer;}
+.cnt{font-size:.7rem;letter-spacing:.1em;color:var(--mu);margin-bottom:.5rem;min-height:1rem;}
+.clr{display:inline-block;border:1px solid var(--ln);background:transparent;color:var(--tx);border-radius:6px;padding:.35rem .8rem;font-family:"DM Sans",sans-serif;font-size:.72rem;cursor:pointer;margin-bottom:.6rem;}
+.list{display:flex;flex-direction:column;gap:.45rem;}
+.rw{border:1px solid var(--bl);border-radius:8px;padding:.6rem .8rem;display:flex;align-items:center;gap:.6rem;}
+.rw.dn{opacity:.4;}
+.rw.dn .nm{text-decoration:line-through;}
+.ck{width:32px;height:32px;border:1.5px solid var(--tx);border-radius:4px;background:transparent;color:var(--tx);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.9rem;cursor:pointer;padding:0;touch-action:manipulation;}
+.rw.dn .ck{background:var(--tx);color:var(--bg);}
+.bd{flex:1;min-width:0;cursor:pointer;}
+.nm{font-size:1rem;font-weight:500;line-height:1.3;word-break:break-word;}
+.ds{font-size:.75rem;color:var(--mu);margin-top:2px;}
+.xx{background:none;border:none;color:var(--mu);font-size:.85rem;cursor:pointer;padding:6px;flex-shrink:0;}
+.xx:hover{color:#F06060;}
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--mu);font-size:.8rem;letter-spacing:.1em;}
+
+/* FENETRE */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg);color:var(--tx);border:1px solid var(--ln);border-radius:10px;width:100%;max-width:420px;padding:1.1rem;display:flex;flex-direction:column;gap:.9rem;}
+.modal-title{font-family:"Just Another Hand",cursive;font-size:30px;line-height:1;transform:rotate(-2deg);transform-origin:left center;}
+.modal-label{font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--mu);margin-bottom:.3rem;}
+.modal input{width:100%;background:transparent;color:var(--tx);border:1px solid var(--ln);border-radius:6px;padding:.55rem .8rem;font-family:"DM Sans",sans-serif;font-size:16px;outline:none;}
+.modal input:focus{border-color:var(--bl);}
+.modal-actions{display:flex;gap:.5rem;justify-content:flex-end;}
+.btn{border:1px solid var(--ln);background:transparent;color:var(--tx);border-radius:5px;padding:.5rem 1rem;font-family:"DM Sans",sans-serif;font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.btn.primary{background:var(--tx);color:var(--bg);border-color:var(--tx);}
+.btn.danger{border-color:#F06060;color:#F06060;padding:.5rem .7rem;}
+.btn svg{width:16px;height:16px;}
 </style>
 </head>
 <body>
@@ -117,6 +151,26 @@ html[data-theme="light"] .ico-moon{display:flex;}
   <div class="content" id="app-content"></div>
 </div>
 
+<!-- FENETRE AJOUTER / MODIFIER -->
+<div class="modal-overlay" id="modal-liste">
+  <div class="modal">
+    <div class="modal-title" id="liste-modal-title">Nouvel item</div>
+    <div>
+      <div class="modal-label">Nom</div>
+      <input type="text" id="liste-nom" placeholder="Ex: Shampoing" autocomplete="off">
+    </div>
+    <div>
+      <div class="modal-label">Note (optionnel)</div>
+      <input type="text" id="liste-desc" placeholder="Ex: format 500ml" autocomplete="off">
+    </div>
+    <div class="modal-actions">
+      <button class="btn danger" type="button" id="liste-del-btn" style="display:none" title="Supprimer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+      <button class="btn" type="button" onclick="fermerModalListe()">Annuler</button>
+      <button class="btn primary" type="button" onclick="sauvegarderItem()">Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
 <script>
 function signInWithGoogle(){window._signIn&&window._signIn();}
 function logout(){window._logout&&window._logout();}
@@ -128,6 +182,27 @@ function toggleTheme(){
 }
 
 var ONGLETS=["Dollo","Walmart","Costco","Quincaillerie","Pharmacie","Vetements","Maquillage","Epicerie","Autres","A prevoir"];
+var LISTES={"Dollo":"dollo","Walmart":"walmart","Costco":"costco"};
+
+function buildListe(sec,nom,id){
+  var ti=document.createElement("div");
+  ti.className="ttl";ti.textContent=nom;
+  var bar=document.createElement("div");
+  bar.className="bar";
+  var se=document.createElement("input");
+  se.type="text";se.className="search";se.id="liste-"+id+"-search";
+  se.placeholder="Rechercher...";se.autocomplete="off";
+  var ad=document.createElement("button");
+  ad.type="button";ad.className="add";ad.id="liste-"+id+"-add";ad.textContent="+ Ajouter";
+  bar.appendChild(se);bar.appendChild(ad);
+  var cpt=document.createElement("div");
+  cpt.className="cnt";cpt.id="liste-"+id+"-cpt";
+  var cl=document.createElement("button");
+  cl.type="button";cl.className="clr";cl.id="liste-"+id+"-clear";cl.textContent="Effacer les coches";
+  var ul=document.createElement("div");
+  ul.className="list";ul.id="liste-"+id+"-ul";
+  sec.appendChild(ti);sec.appendChild(bar);sec.appendChild(cpt);sec.appendChild(cl);sec.appendChild(ul);
+}
 
 function goTab(name){
   var tabs=document.querySelectorAll(".tab");
@@ -171,6 +246,8 @@ function buildUI(){
         g.appendChild(t);
       });
       sec.appendChild(g);
+    }else if(LISTES[nom]){
+      buildListe(sec,nom,LISTES[nom]);
     }else{
       var ti=document.createElement("div");
       ti.className="ttl";ti.textContent=nom;
@@ -188,6 +265,8 @@ buildUI();
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged}
   from"https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import{getFirestore,collection,doc,query,orderBy,onSnapshot,addDoc,updateDoc,deleteDoc,serverTimestamp}
+  from"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig={
   apiKey:"AIzaSyDd4i9kw_tVWVtdTcML_xEuR1qWScMAgAo",
@@ -200,6 +279,7 @@ const firebaseConfig={
 const app=initializeApp(firebaseConfig);
 const auth=getAuth(app);
 const provider=new GoogleAuthProvider();
+const db=getFirestore(app);
 
 function toast(msg,dur){
   const t=document.getElementById("toast");
@@ -213,6 +293,146 @@ window._signIn=async()=>{
 };
 window._logout=()=>signOut(auth);
 
+/* LISTES SIMPLES : users/{uid}/{dollo|walmart|costco} */
+const LISTES=window.LISTES;
+const listeData={};
+let listeUnsubs={};
+let currentUid=null;
+let modalListe=null;
+let modalEditId=null;
+
+function colRef(id){return collection(db,"users",currentUid,id);}
+function docRef(id,docId){return doc(db,"users",currentUid,id,docId);}
+function nomListe(id){return Object.keys(LISTES).find(k=>LISTES[k]===id)||"";}
+
+function renderListe(id){
+  const ul=document.getElementById("liste-"+id+"-ul");
+  const cpt=document.getElementById("liste-"+id+"-cpt");
+  const sr=document.getElementById("liste-"+id+"-search");
+  if(!ul||!cpt||!sr)return;
+  const q=sr.value.trim().toLowerCase();
+  const tous=listeData[id]||[];
+  let items=tous;
+  if(q)items=tous.filter(i=>(i.nom||"").toLowerCase().includes(q)||(i.desc||"").toLowerCase().includes(q));
+  ul.innerHTML="";
+  const reste=tous.filter(i=>!i.achete).length;
+  cpt.textContent=tous.length?reste+" restant"+(reste>1?"s":""):"";
+  if(!items.length){
+    const e=document.createElement("div");
+    e.className="empty";
+    e.textContent=q?"Aucun resultat":"Aucun item pour l instant";
+    ul.appendChild(e);
+    return;
+  }
+  items.forEach(item=>{
+    const row=document.createElement("div");
+    row.className="rw"+(item.achete?" dn":"");
+    const chk=document.createElement("button");
+    chk.type="button";chk.className="ck";
+    chk.textContent=item.achete?"✓":"";
+    chk.addEventListener("click",e=>{
+      e.stopPropagation();
+      updateDoc(docRef(id,item.id),{achete:!item.achete}).catch(err=>toast("Erreur: "+err.message));
+    });
+    const body=document.createElement("div");
+    body.className="bd";
+    const nm=document.createElement("div");
+    nm.className="nm";nm.textContent=item.nom||"";
+    body.appendChild(nm);
+    if(item.desc){
+      const ds=document.createElement("div");
+      ds.className="ds";ds.textContent=item.desc;
+      body.appendChild(ds);
+    }
+    body.addEventListener("click",()=>ouvrirModalListe(id,item));
+    const x=document.createElement("button");
+    x.type="button";x.className="xx";x.textContent="✕";x.title="Supprimer";
+    x.addEventListener("click",e=>{
+      e.stopPropagation();
+      deleteDoc(docRef(id,item.id)).catch(err=>toast("Erreur: "+err.message));
+    });
+    row.appendChild(chk);row.appendChild(body);row.appendChild(x);
+    ul.appendChild(row);
+  });
+}
+
+function stopListeners(){
+  Object.values(listeUnsubs).forEach(u=>u&&u());
+  listeUnsubs={};
+  currentUid=null;
+  Object.values(LISTES).forEach(id=>{listeData[id]=[];renderListe(id);});
+}
+
+function startListeners(uid){
+  stopListeners();
+  currentUid=uid;
+  Object.values(LISTES).forEach(id=>{
+    const q=query(colRef(id),orderBy("createdAt","desc"));
+    listeUnsubs[id]=onSnapshot(q,snap=>{
+      listeData[id]=snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderListe(id);
+    },err=>toast("Erreur: "+err.message));
+  });
+}
+
+function ouvrirModalListe(id,item){
+  modalListe=id;
+  modalEditId=item?item.id:null;
+  document.getElementById("liste-modal-title").textContent=(item?"Modifier":"Nouvel item")+" - "+nomListe(id);
+  document.getElementById("liste-nom").value=item?(item.nom||""):"";
+  document.getElementById("liste-desc").value=item?(item.desc||""):"";
+  document.getElementById("liste-del-btn").style.display=item?"flex":"none";
+  document.getElementById("modal-liste").classList.add("open");
+  setTimeout(()=>document.getElementById("liste-nom").focus(),150);
+}
+
+window.fermerModalListe=()=>document.getElementById("modal-liste").classList.remove("open");
+
+window.sauvegarderItem=async()=>{
+  if(!currentUid||!modalListe)return;
+  const nom=document.getElementById("liste-nom").value.trim();
+  if(!nom){toast("Entre un nom");return;}
+  const desc=document.getElementById("liste-desc").value.trim();
+  try{
+    if(modalEditId)await updateDoc(docRef(modalListe,modalEditId),{nom,desc});
+    else await addDoc(colRef(modalListe),{nom,desc,achete:false,createdAt:serverTimestamp()});
+    window.fermerModalListe();
+    toast("Sauvegarde");
+  }catch(e){toast("Erreur: "+e.message);}
+};
+
+async function effacerCoches(id){
+  if(!currentUid)return;
+  const coches=(listeData[id]||[]).filter(i=>i.achete);
+  if(!coches.length){toast("Aucun item coche");return;}
+  try{
+    await Promise.all(coches.map(i=>deleteDoc(docRef(id,i.id))));
+    toast("Items coches supprimes");
+  }catch(e){toast("Erreur: "+e.message);}
+}
+
+Object.values(LISTES).forEach(id=>{
+  document.getElementById("liste-"+id+"-search").addEventListener("input",()=>renderListe(id));
+  document.getElementById("liste-"+id+"-add").addEventListener("click",()=>ouvrirModalListe(id,null));
+  document.getElementById("liste-"+id+"-clear").addEventListener("click",()=>effacerCoches(id));
+});
+document.getElementById("liste-del-btn").addEventListener("click",async()=>{
+  if(!currentUid||!modalListe||!modalEditId)return;
+  try{
+    await deleteDoc(docRef(modalListe,modalEditId));
+    window.fermerModalListe();
+    toast("Supprime");
+  }catch(e){toast("Erreur: "+e.message);}
+});
+document.getElementById("modal-liste").addEventListener("click",e=>{
+  if(e.target.id==="modal-liste")window.fermerModalListe();
+});
+["liste-nom","liste-desc"].forEach(i=>{
+  document.getElementById(i).addEventListener("keydown",e=>{
+    if(e.key==="Enter")window.sauvegarderItem();
+  });
+});
+
 onAuthStateChanged(auth,user=>{
   const authScreen=document.getElementById("auth-screen");
   const appEl=document.getElementById("app");
@@ -224,7 +444,9 @@ onAuthStateChanged(auth,user=>{
     const av=document.getElementById("user-avatar");
     if(user.photoURL){av.src=user.photoURL;av.style.display="block";}
     else{av.style.display="none";}
+    startListeners(user.uid);
   }else{
+    stopListeners();
     appEl.style.display="none";
     authScreen.style.display="flex";
   }
