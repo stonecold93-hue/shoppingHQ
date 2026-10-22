@@ -74,9 +74,9 @@ html[data-theme="light"] .ico-moon{display:flex;}
 
 /* ACCUEIL */
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.tile{border:1px solid var(--bl);border-radius:8px;padding:1rem;cursor:pointer;}
+.tile{border:1px solid var(--bl);border-radius:8px;padding:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;}
 .tile:hover{background:var(--act);}
-.tile-name{font-family:"Just Another Hand",cursive;font-size:28px;line-height:1.1;transform:rotate(-2deg);transform-origin:left center;}
+.tile-name{font-family:"Just Another Hand",cursive;font-size:28px;line-height:1.1;transform:rotate(-2deg);transform-origin:center center;}
 .tile-sub{font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--mu);margin-top:3px;}
 
 /* PAGES */
@@ -351,9 +351,7 @@ function buildUI(){
         t.className="tile";
         var tn=document.createElement("div");
         tn.className="tile-name";tn.textContent=n;
-        var ts=document.createElement("div");
-        ts.className="tile-sub";ts.textContent="Prive";
-        t.appendChild(tn);t.appendChild(ts);
+        t.appendChild(tn);
         t.onclick=function(){goTab(n);};
         g.appendChild(t);
       });
