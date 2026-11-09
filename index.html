@@ -144,6 +144,15 @@ html[data-theme="light"] .ico-moon{display:flex;}
 .ep-items{display:flex;flex-direction:column;gap:.35rem;overflow-y:auto;min-height:120px;max-height:50vh;}
 .ep-row{display:flex;align-items:center;gap:.5rem;border:1px solid var(--ln);border-radius:8px;padding:.3rem .5rem .3rem .75rem;flex-shrink:0;}
 .ep-row.in{border-color:var(--bl);}
+.ep-bar{display:flex;align-items:center;gap:.5rem;}
+.ep-loupe{width:40px;height:36px;padding:0;flex-shrink:0;}
+.ep-loupe svg{width:18px;height:18px;}
+.ep-bar .ep-search{display:none;flex:1;min-width:0;}
+.ep-bar.rech .ep-search{display:block;}
+.ep-bar .ep-sp{flex:1;}
+.ep-bar.rech .ep-sp,.ep-bar.rech #epic-new{display:none;}
+.ep-tag{font-size:.65rem;color:var(--mu);white-space:nowrap;}
+.ep-count{font-size:.72rem;color:var(--mu);}
 .ep-nm{flex:1;min-width:0;font-size:.95rem;word-break:break-word;}
 .ep-q{font-size:.75rem;color:var(--bl);}
 .ep-plus{width:34px;height:34px;border:1px solid var(--bl);border-radius:6px;background:transparent;color:var(--tx);font-size:1.3rem;line-height:1;padding:0;cursor:pointer;flex-shrink:0;touch-action:manipulation;}
@@ -211,7 +220,13 @@ html[data-theme="light"] .ico-moon{display:flex;}
       <div class="modal-title">Ajouter</div>
       <button class="btn" type="button" id="epic-close">Fermer</button>
     </div>
-    <div style="display:flex;justify-content:flex-end;"><button class="btn" type="button" id="epic-new">+ Ajout aliment</button></div>
+    <div class="ep-bar" id="epic-bar">
+      <button class="btn ep-loupe" type="button" id="epic-loupe" aria-label="Rechercher"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
+      <input type="text" class="ep-search" id="epic-search" placeholder="Rechercher..." autocomplete="off">
+      <span class="ep-sp"></span>
+      <button class="btn" type="button" id="epic-new">+ Ajout aliment</button>
+    </div>
+    <div class="ep-count" id="epic-count"></div>
     <div class="ep-cats" id="epic-cats"></div>
     <div class="ep-items" id="epic-items"></div>
   </div>
@@ -258,7 +273,7 @@ var MAGS={
   epicerie:["IGA","IGA Extra","Metro","Metro Plus","Super C","Maxi","Provigo","Provigo Le Marche","Loblaws","Marche Tradition","Marche Bonichoix","Marche Richelieu","Marche Ami","Intermarche","Adonis","Mayrand","Rachelle-Bery","Avril","Walmart","Costco","Giant Tiger","Dollarama"]
 };
 
-var EPIC_CATS={"Frigo": ["Lait", "Œuf", "Beurre", "Margarine", "Fromage en barre", "Fromage en grains", "Concombre", "Carotte", "Oignon", "Piment rouge", "Piment vert", "Champignons", "Peace Tea pêche thé glacé", "Peace Tea framboise thé glacé", "Réhausseur de café vanille", "7 Up mini canettes", "Eau pétillante fraise melon d'eau", "Jambon fumé", "Pomme de terre", "Frites coupe ondulée", "Peace Tea sno berry thé glacé", "Vanille", "Pommes", "Bananes", "Raisins vert", "Raisin rouge", "Jus d'orange", "Céleri"], "Congélateur": ["Bœuf haché", "Cubes de Bœuf", "Bifteck Attendri", "Steaks Minutes", "Rôti Contre-Filet", "Rôti Haut de Surlonge Désossé", "Fondue", "Tournedos", "Filet de Porc", "Bacon", "Pepperoni", "Pepperoni Épicé", "Porc haché", "Frites épicées poivre", "Rondelles d'oignon surgelées", "Bologne", "Tourtière", "Veau haché maigre", "Bœuf haché maigre", "Poitrine de Poulet", "Haut de Cuisse de Poulet", "Cuisse de Poulet", "Ailes de Poulet", "Poulet Pop Corn", "Poulet Médaillon Bacon", "Filet de Sole", "Médaillon de poulet au bacon", "Sauce à Spaghetti", "Soupe aux Légumes", "Sauce brune", "Coulis de Tomate"], "Garde-Manger": ["Spaghettini", "Spaghetti", "Lasagne", "Macaroni coude", "Farine à pain", "Farine", "Flocons d'avoine", "Sucre granulé", "Cassonade", "Poudre à pâte", "Bicarbonate de soude", "Essence d'amande", "Extrait d'orange pur", "Essence de rhum", "Pépites de chocolat", "Beurre d'arachide Kraft", "Nutella", "Levure sèche active", "Levure machine à pain", "Nescafé Gold Espresso décaféiné"], "Conserves": ["Maïs en grains", "Jus de tomate", "Sauce tomate", "Sauce poutine", "Sauce poutine sachet", "Sauce pizza", "Sirop d'érable", "Bouillon de poulet", "Bouillon de bœuf", "Bouillon pour fondue", "Tomate en boîte", "Pâte de tomates"], "Condiments & Huiles": ["Sauce Worcestershire", "Huile de sésame", "Bovril bœuf", "Épice-riz Pilaf", "Sauce soya", "Huile végétale", "Huile d'olive extra vierge", "Huile de tournesol", "Ketchup", "Moutarde de Dijon", "Vinaigre de cidre"], "Collations": ["Cookies & Cream spread", "Goldfish Explosion de pizza", "Jos Louis Vachon", "Ah Caramel! Vachon", "Barres granola chocolat noir", "Doritos Piment infernal", "Croustilles BBQ", "Fruit-O-Long collations roulées"], "Épices & Herbes": ["Sel", "Poivre noir moulu", "Poivre de Cayenne broyé", "Sel de céleri", "Fleur de sel", "Paprika", "Paprika fumé", "Poudre d'ail", "Poudre d'oignon", "Curcuma moulu", "Muscade moulue", "Clou de girofle moulu", "Cannelle bâtonnets", "Cumin moulu", "Curry powder", "Basilic", "Thym", "Origan", "Fines herbes", "Sauge moulue", "Graines de céleri", "Ciboulette lyophilisée", "Persil en flocons", "Feuilles de laurier", "4 épices", "Herbamare", "Épice BBQ", "Chapelure Italienne", "Cacao", "Fécule de maïs", "La Grille Poulet", "La Grille Montreal Steak", "La Grille Saumon", "Assaisonnement Grec", "Bruschetta", "Beurre à l'ail", "Aneth", "Assaisonnement Italien", "Poudre de chili", "Gravy mix porc French's", "Simili-bacon en miettes"]};
+var EPIC_CATS={"Produits laitiers et œufs": ["Lait 2%", "Œuf", "Beurre", "Margarine", "Fromage en barre", "Fromage en grains", "Réhausseur de café vanille", "Lait 3.25%", "Lait 1%", "Lait au chocolat", "Lait sans lactose", "Silk", "Boisson de soya", "Yogourt grec", "Yogourt nature", "Yogourt a boire", "Fromage râpé", "Tranches de fromage", "Fromage ricotta", "Fromage cottage", "Crème sure"], "Fruits et légumes": ["Concombre", "Carotte", "Oignon", "Piment rouge", "Piment vert", "Champignons", "Pommes", "Bananes", "Raisins vert", "Raisin rouge", "Céleri", "Pomme de terre", "Poires", "Avocat", "Mangue", "Kiwi", "Salade ceasar", "Ananas", "Prunes", "Peche", "Cantaloup", "Melon d eau", "Clementine", "Citron", "Lime", "Framboise", "Bleuets", "Fraises", "Laitue iceberg", "Laitue boston", "Brocolis", "Choux"], "Garde-Manger": ["Spaghettini", "Spaghetti", "Lasagne", "Macaroni coude", "Farine à pain", "Farine", "Flocons d'avoine", "Sucre granulé", "Cassonade", "Poudre à pâte", "Bicarbonate de soude", "Essence d'amande", "Extrait d'orange pur", "Essence de rhum", "Pépites de chocolat", "Beurre d'arachide Kraft", "Nutella", "Levure sèche active", "Levure machine à pain"], "Viandes et volailles": ["Bœuf haché", "Cubes de Bœuf", "Bifteck Attendri", "Steaks Minutes", "Rôti Contre-Filet", "Rôti Haut de Surlonge Désossé", "Fondue", "Tournedos", "Filet de Porc", "Porc haché", "Veau haché maigre", "Bœuf haché maigre", "Poitrine de Poulet", "Haut de Cuisse de Poulet", "Cuisse de Poulet"], "Produits surgelés": ["Frites épicées poivre", "Rondelles d'oignon surgelées", "Tourtière", "Ailes de Poulet", "Poulet Pop Corn", "Médaillon de poulet au bacon", "Filet de Sole", "Pizza surgelé"], "Pains et pâtisseries": ["Croissant", "Chocolatine", "Pain blanc", "Pain brun", "Pain baguette", "Pain miche", "Pain naan", "Muffins", "Tortillas", "Pain a l'ail", "Pita blanc", "Pita blé", "Bagels graines de sesames", "Bagels fromage", "Bagels nature"], "Charcuteries": ["Jambon fumé", "Bologne", "Bacon", "Pepperoni", "Pepperoni Épicé"], "Poissons et fruits de mer": ["Saumon", "Truite", "Thon", "Poisson blanc"], "Collations": ["Cookies & Cream spread", "Goldfish Explosion de pizza", "Jos Louis Vachon", "Ah Caramel! Vachon", "Barres granola chocolat noir", "Doritos Piment infernal", "Croustilles BBQ", "Fruit-O-Long collations roulées"], "Conserves": ["Maïs en grains", "Jus de tomate", "Sauce tomate", "Sauce poutine", "Sauce poutine sachet", "Sauce pizza", "Sirop d'érable", "Bouillon de poulet", "Bouillon de bœuf", "Bouillon pour fondue", "Tomate en boîte", "Pâte de tomates"], "Épices & Herbes": ["Sel", "Poivre noir moulu", "Poivre de Cayenne broyé", "Sel de céleri", "Fleur de sel", "Paprika", "Paprika fumé", "Poudre d'ail", "Poudre d'oignon", "Curcuma moulu", "Muscade moulue", "Clou de girofle moulu", "Cannelle bâtonnets", "Cumin moulu", "Curry powder", "Basilic", "Thym", "Origan", "Fines herbes", "Sauge moulue", "Graines de céleri", "Ciboulette lyophilisée", "Persil en flocons", "Feuilles de laurier", "4 épices", "Herbamare", "Épice BBQ", "Chapelure Italienne", "Cacao", "Fécule de maïs", "La Grille Poulet", "La Grille Montreal Steak", "La Grille Saumon", "Assaisonnement Grec", "Bruschetta", "Beurre à l'ail", "Aneth", "Assaisonnement Italien", "Poudre de chili", "Gravy mix porc French's", "Simili-bacon en miettes"], "Condiments & Huiles": ["Sauce Worcestershire", "Huile de sésame", "Bovril bœuf", "Épice-riz Pilaf", "Sauce soya", "Huile végétale", "Huile d'olive extra vierge", "Huile de tournesol", "Ketchup", "Moutarde de Dijon", "Vinaigre de cidre"], "Boissons": ["Peace Tea pêche thé glacé", "Peace Tea framboise thé glacé", "7 Up mini canettes", "Eau pétillante fraise melon d'eau", "Peace Tea sno berry thé glacé", "Jus d'orange"]};
 
 function buildMgl(sec,nom,id,libre){
   var ti=document.createElement("div");
@@ -626,13 +641,55 @@ function epQte(nom){
   const f=(listeData.epicerie||[]).find(i=>!i.achete&&(i.nom||"").toLowerCase()===nom.toLowerCase());
   return f?(f.qte||1):0;
 }
+const nz=t=>(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/œ/g,"oe");
+function epRecherche(){
+  const q=nz(document.getElementById("epic-search").value.trim());
+  if(!q)return null;
+  const mots=q.split(/\s+/);
+  const res=[];
+  const vus={};
+  Object.keys(EPIC_CATS).forEach(cat=>{
+    epItems(cat).forEach(n=>{
+      const cle=nz(n);
+      if(vus[cle])return;
+      const w=cle.split(/[^a-z0-9]+/);
+      if(mots.every(t=>w.some(x=>x.indexOf(t)===0))){vus[cle]=1;res.push({n:n,cat:cat,deb:cle.indexOf(q)===0?0:1});}
+    });
+  });
+  res.sort((x,y)=>x.deb-y.deb||x.n.localeCompare(y.n,"fr"));
+  return res;
+}
+function epLigne(n,cat){
+  const q=epQte(n);
+  const row=document.createElement("div");
+  row.className="ep-row"+(q?" in":"");
+  const s=document.createElement("span");
+  s.className="ep-nm";s.textContent=n;
+  row.appendChild(s);
+  if(cat){
+    const t=document.createElement("span");
+    t.className="ep-tag";t.textContent=cat;
+    row.appendChild(t);
+  }
+  const m=document.createElement("span");
+  m.className="ep-q";m.textContent=q?"x"+q:"";
+  const p=document.createElement("button");
+  p.type="button";p.className="ep-plus";p.textContent="+";p.setAttribute("aria-label","Ajouter "+n);
+  p.addEventListener("click",()=>ajouterEpic(n));
+  row.appendChild(m);row.appendChild(p);
+  return row;
+}
 function renderPicker(){
   const ov=document.getElementById("modal-epic");
   if(!ov||!ov.classList.contains("open"))return;
   const noms=Object.keys(EPIC_CATS);
   if(!epCat)epCat=noms[0];
+  const res=epRecherche();
   const cb=document.getElementById("epic-cats");
+  const cnt=document.getElementById("epic-count");
   cb.innerHTML="";
+  cb.style.display=res?"none":"";
+  cnt.textContent=res?(res.length+" resultat"+(res.length>1?"s":"")):"";
   noms.forEach(k=>{
     const b=document.createElement("button");
     b.type="button";b.className="ep-cat"+(k===epCat?" on":"");b.textContent=k;
@@ -642,21 +699,27 @@ function renderPicker(){
   const lb=document.getElementById("epic-items");
   const top=lb.scrollTop;
   lb.innerHTML="";
-  epItems(epCat).forEach(n=>{
-    const q=epQte(n);
-    const row=document.createElement("div");
-    row.className="ep-row"+(q?" in":"");
-    const s=document.createElement("span");
-    s.className="ep-nm";s.textContent=n;
-    const m=document.createElement("span");
-    m.className="ep-q";m.textContent=q?"x"+q:"";
-    const p=document.createElement("button");
-    p.type="button";p.className="ep-plus";p.textContent="+";p.setAttribute("aria-label","Ajouter "+n);
-    p.addEventListener("click",()=>ajouterEpic(n));
-    row.appendChild(s);row.appendChild(m);row.appendChild(p);
-    lb.appendChild(row);
-  });
+  if(res){
+    if(!res.length){
+      const e=document.createElement("div");
+      e.className="empty";e.textContent="Aucun resultat";
+      lb.appendChild(e);
+    }
+    res.forEach(x=>lb.appendChild(epLigne(x.n,x.cat)));
+  }else{
+    epItems(epCat).forEach(n=>lb.appendChild(epLigne(n,null)));
+  }
   lb.scrollTop=top;
+}
+function basculerRecherche(ouvrir){
+  const bar=document.getElementById("epic-bar");
+  const inp=document.getElementById("epic-search");
+  const on=ouvrir===undefined?!bar.classList.contains("rech"):ouvrir;
+  bar.classList.toggle("rech",on);
+  if(on)setTimeout(()=>inp.focus(),50);
+  else inp.value="";
+  renderPicker();
+  document.getElementById("epic-items").scrollTop=0;
 }
 async function ajouterEpic(nom){
   if(!currentUid)return;
@@ -699,9 +762,12 @@ async function enregistrerAlim(){
 }
 function ouvrirPicker(){
   document.getElementById("modal-epic").classList.add("open");
-  renderPicker();
+  basculerRecherche(false);
 }
-function fermerPicker(){document.getElementById("modal-epic").classList.remove("open");}
+function fermerPicker(){
+  document.getElementById("modal-epic").classList.remove("open");
+  basculerRecherche(false);
+}
 
 function ouvrirModalListe(id,item){
   modalListe=id;
@@ -756,6 +822,8 @@ Object.values(MGL).concat(Object.values(LIBRES)).forEach(id=>{
 });
 document.getElementById("epic-close").addEventListener("click",fermerPicker);
 document.getElementById("epic-new").addEventListener("click",ouvrirAlim);
+document.getElementById("epic-loupe").addEventListener("click",()=>basculerRecherche());
+document.getElementById("epic-search").addEventListener("input",()=>{renderPicker();document.getElementById("epic-items").scrollTop=0;});
 document.getElementById("alim-annuler").addEventListener("click",fermerAlim);
 document.getElementById("alim-ok").addEventListener("click",enregistrerAlim);
 document.getElementById("alim-nom").addEventListener("keydown",e=>{if(e.key==="Enter")enregistrerAlim();});
